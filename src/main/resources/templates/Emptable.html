@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8">
+    <title>Layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <link rel="stylesheet" href="./layui/css/layui.css" media="all">
+    <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+
+<table class="layui-hide" id="test" lay-filter="test"></table>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <a href="http://localhost:8080/from" class="layui-btn" lay-event="insertEmp">添加员工</a>
+        <!--<button class="layui-btn layui-btn-sm" lay-event="insertEmp" >添加员工</button>-->
+        <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+        <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+    </div>
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-radius layui-btn-xs" lay-event="edit">编辑</a>
+    <!--<button type="button" class="layui-btn layui-btn-radius">默认按钮</button>-->
+    <a class="layui-btn layui-btn-radius layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+
+<script src="./layui/layui.js"  charset="utf-8"></script>
+<!-- 注意：如果你直接复制所有代码到本地，上述js路径需要改成你本地的 -->
+
+<script>
+    layui.use('table', function(){
+        var table = layui.table;
+
+        table.render({
+            elem: '#test'
+            ,toolbar:'#toolbarDemo'
+            ,url:'http://localhost:8080/json'
+            ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            ,cols: [
+                [
+                {field:'id',title: 'ID', sort: true}
+                ,{field:'lastName',edit:'text',title: '用户名'}
+                ,{field:'email',title: '邮件',edit:'text', sort: true}
+                ,{field:'gender',title: '性别',edit:'text',templet:function (res) {
+                        var html = "";
+                        html += res.gender==1?"男":(res.gender==0?'女':'');
+                        return html;
+                    }}
+                ,{field:'deptName',title: '部门',templet:function (res) {
+                        return '<span>'+ res.dept.deptName +'</span>'
+             }} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
+                ,{fixed: 'right', title:'操作', toolbar: '#barDemo', width:150}
+            ]]
+            ,page:true
+
+        });
+
+        layui.use('table', function(){
+            var table = layui.table;
+
+            //监听单元格编辑
+            table.on('edit(test)', function(obj){
+                var value = obj.value //得到修改后的值
+                    ,data = obj.data //得到所在行所有键值
+                    ,field = obj.field; //得到字段
+                layer.msg('[ID: '+ data.id +'] ' + field + ' 字段更改为：'+ value);
+                update(data);
+            });
+        });
+        //头工具栏事件
+        table.on('toolbar(test)', function(obj){
+            if(obj.event === "insertEmp"){
+                console.log("成功！")
+            }
+
+        });
+        //监听行工具事件
+        table.on('tool(test)', function(obj){
+            var data = obj.data;
+            var id =obj.data.id;
+            console.log(obj);
+            console.log(data.dept);
+            if(obj.event === 'del'){
+                layer.confirm('真的删除行么', function(index){
+                    obj.del();
+                    layer.close(index);
+                    empDel(id);
+
+                });
+
+            } else if(obj.event === 'edit'){
+                layer.prompt({
+                    formType: 2
+                    ,value: data.email
+                }, function(value, index){
+                    obj.update({
+                        email: value
+                    });
+                    console.log(value);
+                    update(value);
+                    layer.close(index);
+                });
+            }
+        });
+
+
+    });
+
+    //添加页面
+    function insertEmp() {
+        $.ajax({
+            type:"get",
+            url:"http://localhost:8080/from",
+            success:function () {
+                console.log("完成！")
+            }
+        })
+    }
+
+    //删除用户
+    function empDel(id){
+        $.ajax({
+            type:"get",
+            url:"http://localhost:8080/emp/"+id,
+            success:function (result) {
+                console.log(result);
+            }
+
+        });
+    }
+
+    //更新用户
+    function update(d){
+        $.ajax({
+            type:"get",
+            url:"http://localhost:8080/unEmp",
+            data:{id:d.id,
+                lastName:d.lastName,
+                email:d.email,
+                gender:d.gender,
+                d_id:d.d_id}
+        });
+    }
+
+  
+
+</script>
+
+</body>
+</html>
